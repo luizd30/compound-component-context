@@ -1,54 +1,109 @@
-# React + TypeScript + Vite
+# 🧩 Select com Compound Components + Context
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Exemplo funcional de como proteger subcomponentes (`<Option />`) para que só funcionem dentro do componente pai (`<Select />`) usando um contexto customizado inspirado no Radix UI.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 📦 O que são Compound Components?
 
-## Expanding the ESLint configuration
+Um padrão onde um componente “pai” expõe subcomponentes diretamente:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```jsx
+<Select>
+  <Option value={1}>Opção 1</Option>
+</Select>
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+✅ É declarativo, intuitivo e facilita a composição.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+❌ Mas sem controle, subcomponentes podem ser usados fora de contexto:
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```jsx
+<Option>Opção fora de contexto</Option>
 ```
+
+## ✅ A solução: Context API + Proteção
+
+Este projeto utiliza um createContext customizado inspirado no Radix UI para proteger o uso dos subcomponentes:
+
+## 🧱 Exemplo com Select e Option
+
+```jsx
+const [SelectProvider, useSelectContext] = createContext("Select");
+
+function Select({ value, onOptionChange, children }) {
+
+  return (
+    <SelectProvider value={{ value, onOptionChange }}>
+      <div>{children}</div>
+    </SelectProvider>
+  );
+}
+
+function Option({ value: optionValue, children }) {
+  const { value, onOptionChange } = useSelectContext("Option");
+  const isSelected = value === optionValue;
+
+  return (
+    <div onClick={() => onOptionChange(optionValue)}>
+      {children} {isSelected && "✔️"}
+    </div>
+  );
+}
+```
+
+✅ Se alguém usar `(<Option/>)` fora do `(<Select/>)`, um erro é lançado:
+
+```sql
+'Option' must be used within 'Select'
+```
+
+## 🧠 Inspiração: createContext do Radix UI
+
+O Radix UI usa uma versão própria de `createContext` que oferece:
+
+- Segurança no consumo de contexto
+- Tipagem forte com `as const`
+- Erros claros e úteis
+
+🔗 Veja o código original:  
+[Radix UI – create-context.tsx](https://github.com/radix-ui/primitives/blob/main/packages/react/context/src/create-context.tsx)
+
+## 💡 No repositório oficial do Radix você também encontra ferramentas poderosas como:
+
+- [createContextScope](https://github.com/radix-ui/primitives/blob/main/packages/react/context/src/create-context.tsx)
+- [useControllableState](https://github.com/radix-ui/primitives/tree/main/packages/react/use-controllable-state)
+- [useLayoutEffect](https://github.com/radix-ui/primitives/blob/main/packages/react/use-layout-effect/src/use-layout-effect.tsx) `com suporte a SSR`
+
+## 🧪 Demonstração prática
+
+```jsx
+const [selected, setSelected] = useState(1);
+
+<Select value={selected} onOptionChange={setSelected}>
+  <Option value={0}>Option 1</Option>
+  <Option value={1}>Option 2</Option>
+</Select>
+```
+
+## ⚙️ Como rodar localmentecompound-component-context
+
+```bash
+git clone https://github.com/luizd30/compound-component-context.git
+cd compound-component-context
+npm install
+npm run dev
+```
+
+## 📚 Recursos recomendados
+
+- [Radix UI (Documentação)](https://www.radix-ui.com/themes/docs/overview/getting-started)
+
+- [Kent C. Dodds – Compound Components](https://kentcdodds.com/blog/compound-components-with-react-hooks)
+
+## 📝 Licença
+
+Este projeto está licenciado sob a licença MIT.  
+Sinta-se à vontade para usar, modificar e contribuir!
+
+---
